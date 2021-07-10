@@ -4,7 +4,6 @@ from .curve import *
 
 fool = Member('fool', 0, 0)
 
-
 class Party():
     def __init__(self, _min: int, _max: int):
         self.people = [fool]
@@ -12,6 +11,7 @@ class Party():
         self.now_size = 1
         self.max_size = 1 + _max
         self.min_size = 0 + _min
+        self.storage = []
 
 
     def create_user(self, _name: str):
@@ -49,6 +49,14 @@ class Party():
         return False
 
 
+    def broadcast_obfused_poly(self):
+        self.storage = [[]]
+        for i, user in enumerate(self.people):
+            if i == 0: continue
+            obs_poly = user.obfuscate_poly()
+            self.storage.append(obs_poly)
+
+
     def get_all_address(self) -> list[Point]:
         result = []
         for i in range(1, self.max_size):
@@ -69,16 +77,25 @@ class Party():
             for i in range(1, self.max_size):
                 y_value = self.people[i].gen_secret_share(j)
                 self.people[j].recv_secret_share(y_value, i)
-            self.people[j].sum_secret_share()
+
+
+    def check_share_secret(self):
+        for i, user in enumerate(self.people):
+            if i == 0: continue
+            if True != user.verify_obfuscation(i, self.storage):
+                return False
+            user.sum_secret_share()
+        return True
 
 
     def setup_group(self):
         if self.now_size != self.max_size: 
             return False
-        self.signable = True
         self.set_private_chall()
+        self.broadcast_obfused_poly()
         self.each_share_secret()
-        return True
+        self.signable = self.check_share_secret()
+        return self.signable
 
 
     def view_secret(self, _name: str):
@@ -111,6 +128,13 @@ class Party():
             pk_group = pk_group + pi_piece
         return pk_group
 
+    
+    def true_group_pkey(self) -> Point:
+        pk_group = E.INF
+        for user in self.people:
+            pk_group = pk_group + user.p_key * user.chall
+        return pk_group
+
 
     def public_group_nonce(self, subset: list[int]) -> Point:
         r_nonce = E.INF
@@ -124,7 +148,13 @@ class Party():
         for signer in subset:
             v_sign += self.people[signer].sign_challenge(e, signer, subset)
             v_sign %= N
-        return v_sign            
+        return v_sign
+
+
+    def clear_all_nonce(self):
+        for user in self.people:
+            user.clear_nonce()
+        return True
 
 
     def sign_message(self, message: str):
@@ -133,7 +163,11 @@ class Party():
         subset = subset[:self.min_size]
 
         p = self.rebuild_group_pkey(subset)
+        assert p == self.true_group_pkey()
+
         r = self.public_group_nonce(subset)
         e = hash_signature(p, r, message)
         s = self.create_signature(e, subset)
+
+        assert True == self.clear_all_nonce()
         return (p, r, s)

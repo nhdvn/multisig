@@ -30,9 +30,9 @@ def create_user(request):
     pk, poly = data
     result = {}
     result['stat'] = True
-    result['poly'] = poly
-    result['pk_x'] = pk.x
-    result['pk_y'] = pk.y
+    result['poly'] = [str(i) for i in poly]
+    result['pk_x'] = str(pk.x)
+    result['pk_y'] = str(pk.y)
     return response_json(result)
 
 
@@ -50,7 +50,7 @@ def view_secret(request):
     if data == False:
         return response_json({'stat': False})
     x_key, share = data
-    result = {'x_key': x_key, 'share': share}
+    result = {'x_key': str(x_key), 'share': str(share)}
     return response_json(result)
 
 
@@ -62,9 +62,9 @@ def view_nonce(request):
     p1, s1 = data
     result = {}
     result['stat'] = True
-    result['p1_x'] = p1.x
-    result['p1_y'] = p1.y
-    result['s1_k'] = s1
+    result['p1_x'] = str(p1.x)
+    result['p1_y'] = str(p1.y)
+    result['s1_k'] = str(s1)
     return response_json(result)
 
 
@@ -98,9 +98,9 @@ def sign_message(request):
     p, r, s = data
     result = {}
     result['stat'] = True
-    result['s'] = s
-    result['px'] = p.x
-    result['py'] = p.y
-    result['rx'] = r.x
-    result['ry'] = r.y
+    result['s'] = str(s)
+    result['px'] = str(p.x)
+    result['py'] = str(p.y)
+    result['rx'] = str(r.x)
+    result['ry'] = str(r.y)
     return response_json(result)

@@ -12,6 +12,7 @@ class Member():
         self.s_poly = [0] * _min
         self.x_key = 0
         self.share = [0] * _max
+        self.chall = 0
         self.secret = 0
         self.online = 0
 
@@ -36,15 +37,38 @@ class Member():
     def gen_private_poly(self) -> list[Point, list[int]]:
         order = len(self.s_poly)
         for i in range(order):
-            coff = randint(2, N - 1)
-            self.s_poly[i] = coff
+            coef = randint(2, N - 1)
+            self.s_poly[i] = coef
         self.p_key = G * self.s_poly[0]
         return self.p_key, self.s_poly
+
+
+    def obfuscate_poly(self) -> list[Point]:
+        result = []
+        for coef in self.s_poly:
+            obfs = coef * G
+            result.append(obfs)
+        result[0] *= self.chall
+        return result
+
+
+    def verify_obfuscation(self, index: int, obs: list[list[Point]]):
+        size = len(self.share)
+        for i in range(1, size):
+            if i == index: continue
+            y = obs[i][0]
+            x = index
+            for j in range(1, len(obs[i])):
+                y = y + x * obs[i][j]
+                x = x * x
+            if y != self.share[i] * G: return False
+        return True
 
 
     def set_master_key(self, group_hash: bytes):
         _chall = hash_aggregate(group_hash, self.p_key)
         _chall = bytes_to_long(_chall)
+        self.chall = _chall
         self.x_key = self.s_poly[0] * _chall % N
 
 
@@ -54,7 +78,7 @@ class Member():
         for i in range(1, order):
             y_value += self.s_poly[i] * j % N
             j = j * j
-        return y_value
+        return y_value % N
 
 
     def recv_secret_share(self, y_value: int, i: int):
@@ -79,7 +103,7 @@ class Member():
             if other == index: continue
             iv = pow(index - other, -1, N)
             f0 = f0 * iv * - other % N
-            f0 = f0 * self.secret % N
+        f0 = f0 * self.secret % N
         return f0
 
 

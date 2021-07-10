@@ -4,10 +4,12 @@ from Crypto.Util.number import long_to_bytes
 from Crypto.Util.number import bytes_to_long
 
 from elliptic.ecc.curve import ShortWeierstrassCurve
-from elliptic.ecc.curve import Point
+from elliptic.ecc.curve import Point, P256
 
 
-E = ShortWeierstrassCurve('', -2, 15, 307, 311, 17, 17)
+# E = ShortWeierstrassCurve('', -2, 15, 307, 311, 17, 17)
+
+E = P256
 G = E.G
 N = E.n
 
